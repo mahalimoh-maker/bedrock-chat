@@ -13,7 +13,7 @@
     <script>
         async function sendPrompt() {
             const prompt = document.getElementById('prompt').value;
-            const res = await fetch('https://YOUR_API_GATEWAY_ENDPOINT/chat', {
+            const res = await fetch('https://https://ccapm03vh7.execute-api.us-east-1.amazonaws.com/prod/chat', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ prompt })
