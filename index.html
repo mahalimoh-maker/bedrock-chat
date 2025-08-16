@@ -1,0 +1,27 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bedrock Chat</title>
+</head>
+<body>
+    <h2>Chat with AI</h2>
+    <textarea id="prompt" rows="4" cols="50"></textarea><br>
+    <button onclick="sendPrompt()">Send</button>
+    <pre id="response"></pre>
+
+    <script>
+        async function sendPrompt() {
+            const prompt = document.getElementById('prompt').value;
+            const res = await fetch('https://YOUR_API_GATEWAY_ENDPOINT/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ prompt })
+            });
+            const data = await res.json();
+            document.getElementById('response').innerText = data.response;
+        }
+    </script>
+</body>
+</html>
+
