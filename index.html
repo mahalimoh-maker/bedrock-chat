@@ -13,18 +13,22 @@
     #chat {
       border: 1px solid #ccc;
       padding: 1rem;
-      height: 300px;
+      height: 400px;
       overflow-y: auto;
       margin-bottom: 1rem;
+      background: #fafafa;
     }
     .message {
       margin: 0.5rem 0;
       padding: 0.5rem;
-      border-radius: 5px;
+      border-radius: 8px;
+      word-wrap: break-word;
     }
     .user { background-color: #e0f7fa; text-align: left; }
     .bot  { background-color: #f1f8e9; text-align: left; }
-    #loading { display: none; margin-bottom: 1rem; }
+    #loading { display: none; margin-bottom: 1rem; font-style: italic; }
+    input { width: 80%; padding: 0.5rem; }
+    button { padding: 0.5rem 1rem; }
   </style>
 </head>
 <body>
@@ -34,18 +38,34 @@
 <div id="chat"></div>
 <div id="loading">Loading...</div>
 
-<input type="text" id="prompt" placeholder="Type your message..." style="width: 80%;">
+<input type="text" id="prompt" placeholder="Type your message...">
 <button onclick="sendPrompt()">Send</button>
 
 <script>
-  const apiUrl = "https://ccapm03vh7.execute-api.us-east-1.amazonaws.com/prod/chat";
+const apiUrl = "https://ccapm03vh7.execute-api.us-east-1.amazonaws.com/prod/chat";
 
-async function sendPrompt() {
-  const prompt = document.getElementById("prompt").value.trim();
+// Function to add a message to the chat
+function addMessage(text, type) {
   const chatDiv = document.getElementById("chat");
+  const msgDiv = document.createElement("div");
+  msgDiv.className = `message ${type}`;
+  msgDiv.textContent = text;
+  chatDiv.appendChild(msgDiv);
+  chatDiv.scrollTop = chatDiv.scrollHeight;
+}
 
-  chatDiv.textContent = "Sending...";
-  
+// Function to send a prompt to Lambda
+async function sendPrompt() {
+  const promptInput = document.getElementById("prompt");
+  const prompt = promptInput.value.trim();
+  const loadingDiv = document.getElementById("loading");
+
+  if (!prompt) return;
+
+  addMessage(prompt, "user");
+  promptInput.value = "";
+  loadingDiv.style.display = "block";
+
   try {
     const res = await fetch(apiUrl, {
       method: "POST",
@@ -54,24 +74,27 @@ async function sendPrompt() {
       mode: "cors"
     });
 
-    console.log("res:", res);
-    const data = await res.json();
-    console.log("data:", data);
-    const jsonBody = JSON.parse(data.body);
-    console.log("jsonBody:", jsonBody);
+    if (!res.ok) {
+      const text = await res.text();
+      addMessage(`Error: ${res.status} - ${text}`, "bot");
+      return;
+    }
 
-    chatDiv.textContent = jsonBody.response;
+    const data = await res.json();
+    const jsonBody = JSON.parse(data.body); // parse Lambda Proxy body
+    addMessage(jsonBody.response, "bot");
 
   } catch (err) {
-    chatDiv.textContent = `Error: ${err.message}`;
+    addMessage(`Error: ${err.message}`, "bot");
+  } finally {
+    loadingDiv.style.display = "none";
   }
 }
 
-
-  // Optional: send message on Enter key
-  document.getElementById("prompt").addEventListener("keypress", function(e) {
-    if (e.key === "Enter") sendPrompt();
-  });
+// Optional: send message on Enter key
+document.getElementById("prompt").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") sendPrompt();
+});
 </script>
 
 </body>
