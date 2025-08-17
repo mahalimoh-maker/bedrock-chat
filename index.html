@@ -1,27 +1,60 @@
-<!-- index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Bedrock Chat</title>
+  <meta charset="UTF-8">
+  <title>Nova Lite Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    textarea { width: 100%; font-size: 16px; }
+    button { padding: 10px 20px; font-size: 16px; margin-top: 10px; }
+    #response { margin-top: 20px; white-space: pre-wrap; border: 1px solid #ccc; padding: 10px; min-height: 50px; }
+    #loading { display: none; margin-top: 10px; font-style: italic; color: gray; }
+  </style>
 </head>
 <body>
-    <h2>Chat with AI</h2>
-    <textarea id="prompt" rows="4" cols="50"></textarea><br>
-    <button onclick="sendPrompt()">Send</button>
-    <pre id="response"></pre>
 
-    <script>
-        async function sendPrompt() {
-            const prompt = document.getElementById('prompt').value;
-            const res = await fetch('https://https://ccapm03vh7.execute-api.us-east-1.amazonaws.com/prod/chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ prompt })
-            });
-            const data = await res.json();
-            document.getElementById('response').innerText = data.response;
+  <h2>Chat with AI (Nova Lite)</h2>
+  <textarea id="prompt" rows="4" placeholder="Type your message here..."></textarea><br>
+  <button onclick="sendPrompt()">Send</button>
+  <div id="loading">Loading...</div>
+  <div id="response"></div>
+
+  <script>
+    async function sendPrompt() {
+      const prompt = document.getElementById("prompt").value.trim();
+      const responseDiv = document.getElementById("response");
+      const loadingDiv = document.getElementById("loading");
+
+      if (!prompt) return;
+
+      responseDiv.textContent = "";
+      loadingDiv.style.display = "block";
+
+      const apiUrl = "https://ccapm03vh7.execute-api.us-east-1.amazonaws.com/prod/chat"; // Replace with your API Gateway endpoint
+
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt })
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          responseDiv.textContent = `Error: ${res.status} - ${text}`;
+          return;
         }
-    </script>
+
+        const data = await res.json();
+        responseDiv.textContent = data.response;
+
+      } catch (err) {
+        responseDiv.textContent = `Error: ${err.message}`;
+      } finally {
+        loadingDiv.style.display = "none";
+      }
+    }
+  </script>
+
 </body>
 </html>
-
