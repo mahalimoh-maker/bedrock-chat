@@ -2,60 +2,100 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Nova Lite Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT via AWS Lambda</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    textarea { width: 100%; font-size: 16px; }
-    button { padding: 10px 20px; font-size: 16px; margin-top: 10px; }
-    #response { margin-top: 20px; white-space: pre-wrap; border: 1px solid #ccc; padding: 10px; min-height: 50px; }
-    #loading { display: none; margin-top: 10px; font-style: italic; color: gray; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      max-width: 600px;
+    }
+    #chat {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+    }
+    .message {
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      border-radius: 5px;
+    }
+    .user { background-color: #e0f7fa; text-align: left; }
+    .bot  { background-color: #f1f8e9; text-align: left; }
+    #loading { display: none; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
 
-  <h2>Chat with AI (Nova Lite)</h2>
-  <textarea id="prompt" rows="4" placeholder="Type your message here..."></textarea><br>
-  <button onclick="sendPrompt()">Send</button>
-  <div id="loading">Loading...</div>
-  <div id="response"></div>
+<h2>ChatGPT via AWS Lambda</h2>
 
-  <script>
-    const apiUrl = "https://ccapm03vh7.execute-api.us-east-1.amazonaws.com/prod/chat"; // Replace with your API Gateway endpoint
+<div id="chat"></div>
+<div id="loading">Loading...</div>
 
-    async function sendPrompt() {
-      const prompt = document.getElementById("prompt").value.trim();
-      const responseDiv = document.getElementById("response");
-      const loadingDiv = document.getElementById("loading");
+<input type="text" id="prompt" placeholder="Type your message..." style="width: 80%;">
+<button onclick="sendPrompt()">Send</button>
 
-      if (!prompt) return;
+<script>
+  const apiUrl = "https://ccapm03vh7.execute-api.us-east-1.amazonaws.com/prod/chat";
 
-      responseDiv.textContent = "";
-      loadingDiv.style.display = "block";
+  async function sendPrompt() {
+    const promptInput = document.getElementById("prompt");
+    const prompt = promptInput.value.trim();
+    const chatDiv = document.getElementById("chat");
+    const loadingDiv = document.getElementById("loading");
 
-      try {
-        const res = await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
-          mode: "cors"  // Important for CORS
-        });
+    if (!prompt) return;
 
-        if (!res.ok) {
-          const text = await res.text();
-          responseDiv.textContent = `Error: ${res.status} - ${text}`;
-          return;
-        }
+    // Show user message
+    const userMsg = document.createElement("div");
+    userMsg.className = "message user";
+    userMsg.textContent = prompt;
+    chatDiv.appendChild(userMsg);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
 
-        const data = await res.json();
-        responseDiv.textContent = data.response;
+    promptInput.value = "";
+    loadingDiv.style.display = "block";
 
-      } catch (err) {
-        responseDiv.textContent = `Error: ${err.message}`;
-      } finally {
-        loadingDiv.style.display = "none";
+    try {
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+        mode: "cors"
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`${res.status} - ${text}`);
       }
+
+      const data = await res.json();            // top-level Lambda object
+      const jsonBody = JSON.parse(data.body);   // parse stringified body
+
+      const botMsg = document.createElement("div");
+      botMsg.className = "message bot";
+      botMsg.textContent = jsonBody.response;
+      chatDiv.appendChild(botMsg);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+
+    } catch (err) {
+      const errMsg = document.createElement("div");
+      errMsg.className = "message bot";
+      errMsg.textContent = `Error: ${err.message}`;
+      chatDiv.appendChild(errMsg);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    } finally {
+      loadingDiv.style.display = "none";
     }
-  </script>
+  }
+
+  // Optional: send message on Enter key
+  document.getElementById("prompt").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") sendPrompt();
+  });
+</script>
 
 </body>
 </html>
