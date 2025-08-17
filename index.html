@@ -20,6 +20,8 @@
   <div id="response"></div>
 
   <script>
+    const apiUrl = "https://ccapm03vh7.execute-api.us-east-1.amazonaws.com/prod/chat"; // Replace with your API Gateway endpoint
+
     async function sendPrompt() {
       const prompt = document.getElementById("prompt").value.trim();
       const responseDiv = document.getElementById("response");
@@ -30,13 +32,12 @@
       responseDiv.textContent = "";
       loadingDiv.style.display = "block";
 
-      const apiUrl = "https://ccapm03vh7.execute-api.us-east-1.amazonaws.com/prod/chat"; // Replace with your API Gateway endpoint
-
       try {
         const res = await fetch(apiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt })
+          body: JSON.stringify({ prompt }),
+          mode: "cors"  // Important for CORS
         });
 
         if (!res.ok) {
