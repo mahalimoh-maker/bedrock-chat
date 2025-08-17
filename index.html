@@ -40,56 +40,33 @@
 <script>
   const apiUrl = "https://ccapm03vh7.execute-api.us-east-1.amazonaws.com/prod/chat";
 
-  async function sendPrompt() {
-    const promptInput = document.getElementById("prompt");
-    const prompt = promptInput.value.trim();
-    const chatDiv = document.getElementById("chat");
-    const loadingDiv = document.getElementById("loading");
+async function sendPrompt() {
+  const prompt = document.getElementById("prompt").value.trim();
+  const chatDiv = document.getElementById("chat");
 
-    if (!prompt) return;
+  chatDiv.textContent = "Sending...";
+  
+  try {
+    const res = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+      mode: "cors"
+    });
 
-    // Show user message
-    const userMsg = document.createElement("div");
-    userMsg.className = "message user";
-    userMsg.textContent = prompt;
-    chatDiv.appendChild(userMsg);
-    chatDiv.scrollTop = chatDiv.scrollHeight;
+    console.log("res:", res);
+    const data = await res.json();
+    console.log("data:", data);
+    const jsonBody = JSON.parse(data.body);
+    console.log("jsonBody:", jsonBody);
 
-    promptInput.value = "";
-    loadingDiv.style.display = "block";
+    chatDiv.textContent = jsonBody.response;
 
-    try {
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-        mode: "cors"
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`${res.status} - ${text}`);
-      }
-
-      const data = await res.json();            // top-level Lambda object
-      const jsonBody = JSON.parse(data.body);   // parse stringified body
-
-      const botMsg = document.createElement("div");
-      botMsg.className = "message bot";
-      botMsg.textContent = jsonBody.response;
-      chatDiv.appendChild(botMsg);
-      chatDiv.scrollTop = chatDiv.scrollHeight;
-
-    } catch (err) {
-      const errMsg = document.createElement("div");
-      errMsg.className = "message bot";
-      errMsg.textContent = `Error: ${err.message}`;
-      chatDiv.appendChild(errMsg);
-      chatDiv.scrollTop = chatDiv.scrollHeight;
-    } finally {
-      loadingDiv.style.display = "none";
-    }
+  } catch (err) {
+    chatDiv.textContent = `Error: ${err.message}`;
   }
+}
+
 
   // Optional: send message on Enter key
   document.getElementById("prompt").addEventListener("keypress", function(e) {
